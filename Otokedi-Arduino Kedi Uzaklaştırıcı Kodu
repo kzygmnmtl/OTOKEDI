@@ -1,0 +1,66 @@
+
+// Otokedi Kodu 
+
+#include <toneAC.h>           // İstediğimiz Tonu yüksek şiddetli D9 ve D10'dan bastırmamızı sağlayan Ardunio Kütüphanesi 
+#include <SoftwareSerial.h>   // Bluetooth portlarını belirlememizi sağlayan Ardunio Kütüphanesi 
+
+SoftwareSerial SerialTXRX (12, 13); // Bu sayede portları değiştiriyoruz. Artık TX (transmit) 12.pin , RX (Receive) 13. pin oldu
+int BluetoothData;                  // Bluetooth üzerinden veri gönderdiğimizde onu bu değişkene yazacağız. 
+
+void setup() {
+  // Buraya yazacağımız kod Ardunio çalışınca bir kere koşacak.
+  SerialTXRX.begin(9600);  // Burada Bluetooh için daha önce set ettiğimiz 12. ve 13. pinleri dinler hale getirdik.
+}
+
+void loop() {
+  // burası adından da anlaşılacağı üzere döngü (loop). buraya yazacağınız kodlar devamlı koşacak yani çalışacak.
+  if (SerialTXRX.available()){         // Birisi Blutooth modülümüz üzerinden veri (data) göndermiş mi diye bakıyoruz. 
+     BluetoothData=SerialTXRX.read();  // Gönderdiyse onu değişkenimiz BluetoothData ya yazıyoruz ki kullanacağız.
+
+  if(BluetoothData=='1'){   // Eğer birisi Bluetooth üzerinden bize "1" verisini gönderiyse bu if bloğunun altındaki kod koşacak. 
+      // biri Bluetooth üzerinden bize "1" göndermiş ki buradayız, yani araba kapı açma basılmış    
+      // şimdi 24000 ila 27000 Hz arasında ultrasonic ses üreteceğiz. 
+      // for bir döngü, ve frekansı bir çal bir sus yaparak frekansı arttırarak çalıyoruz.
+      for (unsigned long freq =  24000; freq <= 27000 && BluetoothData =='1'; freq += 20){  
+        // ilk 24000 Hz ses basacağız, sonra 24020, 24040, 24060..... 26960, 26980, 27000, 20'şer 20'şerr artırıyoruz kısaca
+        toneAC(freq);  // Sıra hangi frekansta ise onu çal
+        delay(100);    // delay yani gecikme sayesinde üstteki tonu duymaya devam edeceğiz. 100 demek 100 ms boyunca tone'u çalacağız.
+        toneAC(0);     // şimdi sesi kapat 
+        delay(200);    // 200 ms boyunca sessizlik. bu sayede bir çal bir sus yaparak daha rahatsız edici oluyoruz.
+
+        // arada biri başka bir veri gönderdi mi diye bakmak lazım. belki biri "0" gönderip sesi kapatmak isteyebilir. 
+        if (SerialTXRX.available() > 0){
+            BluetoothData=SerialTXRX.read();
+        }
+      }
+      toneAC(0); // Artık 27000 frekansa geldim (45 sn geçti) ya da biri başka veri gönderdi, o zaman sesi kapat.
+      SerialTXRX.flush ();  // Bluetooth verisini de si ki bir daha bir daha aynı sesi çalmayayım
+  }
+   
+  if (BluetoothData=='0'){// birisi Bluetooth ile 0 tuşuna basmış. yani kapatma tuşu
+   // burada birşey yapmaya şimdilik gerek yok. ileride başka birşey aklımıza gelirse düşünürüz.
+  }
+   
+  if(BluetoothData=='a'){   // Eğer birisi Bluetooth üzerinden bize "a" verisini gönderiyse bu if bloğunun altındaki kod koşacak. 
+      // biri Bluetooth üzerinden bize "a" göndermiş ki buradayız, yani araba etrafında şüpheli insanlar var   
+      // onları kaçırmak için insanların duyabileceği frekansta sesler çıkarıp, onları kaçıracağız.
+      // for bir döngü, ve frekansı bir çal bir sus yaparak frekansı arttırarak çalıyoruz.
+      for (unsigned long freq =  1500; freq <= 2000 && BluetoothData =='a'; freq += 10){  
+        toneAC(freq);   // Sıra hangi frekansta ise onu çal
+        delay(100);     // delay yani gecikme sayesinde üstteki tonu duymaya devam edeceğiz. 100 demek 100 ms boyunca tone'u çalacağız.
+        toneAC(0);      // şimdi sesi kapat 
+        delay(100);     // 100 ms boyunca sessizlik. bu sayede bir çal bir sus yaparak daha rahatsız edici oluyoruz.
+
+        // arada biri başka bir veri gönderdi mi diye bakmak lazım. belki biri "0" gönderip sesi kapatmak isteyebilir. 
+        if (SerialTXRX.available() > 0){
+            BluetoothData=SerialTXRX.read();
+        }
+       }
+       toneAC(0);             // Artık for döngüsü bitti (en son 2000 Hz çaldık), şimdi sesi kapat.
+       SerialTXRX.flush ();   // Bluetooth verisini de si ki bir daha bir daha aynı sesi çalmayayım
+   }
+
+  // Bundan sonrası senin hayal gücün 
+}
+        delay(200);     // Bluetooth modülümüzü yormayalım, biraz bekleyip bir veri gelmiş mi diye 200 ms sonra bakalım.
+}
